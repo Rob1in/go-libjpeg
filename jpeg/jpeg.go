@@ -9,7 +9,8 @@ package jpeg
 //
 
 /*
-#cgo LDFLAGS: -ljpeg
+#cgo windows LDFLAGS: -ljpeg
+#cgo !windows pkg-config: libjpeg
 #include <stdlib.h>
 #include <stdio.h>
 #include <jpeglib.h>
