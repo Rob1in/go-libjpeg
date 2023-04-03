@@ -316,24 +316,23 @@ func writeScanline(cinfo *C.struct_jpeg_compress_struct, row C.JSAMPROW, maxLine
 	return
 }
 
-//
-//func writeMCUGray(cinfo *C.struct_jpeg_compress_struct, row C.JSAMPROW, stride int) (line int, err error) {
-//	code := C.int(0)
-//	line = int(C.write_mcu_gray(cinfo, row, C.int(stride), &code))
-//	if code != 0 {
-//		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
-//	}
-//	return
-//}
-//
-//func writeMCUYCbCr(cinfo *C.struct_jpeg_compress_struct, y, cb, cr C.JSAMPROW, yStride, cStride int) (line int, err error) {
-//	code := C.int(0)
-//	line = int(C.write_mcu_ycbcr(cinfo, y, cb, cr, C.int(yStride), C.int(cStride), &code))
-//	if code != 0 {
-//		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
-//	}
-//	return
-//}
+func writeMCUGray(cinfo *C.struct_jpeg_compress_struct, row C.JSAMPROW, stride int) (line int, err error) {
+	code := C.int(0)
+	line = int(C.write_mcu_gray(cinfo, row, C.int(stride), &code))
+	if code != 0 {
+		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
+	}
+	return
+}
+
+func writeMCUYCbCr(cinfo *C.struct_jpeg_compress_struct, y, cb, cr C.JSAMPROW, yStride, cStride int) (line int, err error) {
+	code := C.int(0)
+	line = int(C.write_mcu_ycbcr(cinfo, y, cb, cr, C.int(yStride), C.int(cStride), &code))
+	if code != 0 {
+		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
+	}
+	return
+}
 
 // Encode encodes src image and writes into w as JPEG format data.
 func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
@@ -346,12 +345,12 @@ func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
 	defer destroyCompress(cinfo)
 	//
 	switch s := src.(type) {
-	//case *image.YCbCr:
-	//	err = encodeYCbCr(cinfo, s, opt)
-	//case *image.Gray:
-	//	err = encodeGray(cinfo, s, opt)
-	//case *image.RGBA:
-	//	err = encodeRGBA(cinfo, s, opt)
+	case *image.YCbCr:
+		err = encodeYCbCr(cinfo, s, opt)
+	case *image.Gray:
+		err = encodeGray(cinfo, s, opt)
+	case *image.RGBA:
+		err = encodeRGBA(cinfo, s, opt)
 	//case *rgb.Image:
 	//	err = encodeRGB(cinfo, s, opt)
 	case *image.NRGBA:
@@ -363,115 +362,114 @@ func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
 	return
 }
 
-// //
-// //// encode image.YCbCr
-// //func encodeYCbCr(cinfo *C.struct_jpeg_compress_struct, src *image.YCbCr, p *EncoderOptions) (err error) {
-// //	// Set up compression parameters
-// //	w, h := src.Bounds().Dx(), src.Bounds().Dy()
-// //	cinfo.image_width = C.JDIMENSION(w)
-// //	cinfo.image_height = C.JDIMENSION(h)
-// //	cinfo.input_components = 3
-// //	cinfo.in_color_space = C.JCS_YCbCr
-// //
-// //	setupEncoderOptions(cinfo, p)
-// //
-// //	compInfo := (*[3]C.jpeg_component_info)(unsafe.Pointer(cinfo.comp_info))
-// //	cVDiv := 1
-// //	switch src.SubsampleRatio {
-// //	case image.YCbCrSubsampleRatio444:
-// //		// 1x1,1x1,1x1
-// //		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 1, 1
-// //		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
-// //		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
-// //	case image.YCbCrSubsampleRatio440:
-// //		// 1x2,1x1,1x1
-// //		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 1, 2
-// //		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
-// //		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
-// //		cVDiv = 2
-// //	case image.YCbCrSubsampleRatio422:
-// //		// 2x1,1x1,1x1
-// //		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 2, 1
-// //		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
-// //		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
-// //	case image.YCbCrSubsampleRatio420:
-// //		// 2x2,1x1,1x1
-// //		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 2, 2
-// //		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
-// //		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
-// //		cVDiv = 2
-// //	}
-// //
-// //	// libjpeg raw data in is in planar format, which avoids unnecessary
-// //	// planar->packed->planar conversions.
-// //	cinfo.raw_data_in = C.TRUE
-// //
-// //	// Start compression
-// //	err = startCompress(cinfo)
-// //	if err != nil {
-// //		return
-// //	}
-// //	defer func() {
-// //		ferr := finishCompress(cinfo)
-// //		if ferr != nil && err == nil {
-// //			err = ferr
-// //		}
-// //	}()
-// //
-// //	for v := 0; v < h; {
-// //		yOff, cOff := v*src.YStride, v/cVDiv*src.CStride
-// //		line, err := writeMCUYCbCr(
-// //			cinfo,
-// //			C.JSAMPROW(unsafe.Pointer(&src.Y[yOff])),
-// //			C.JSAMPROW(unsafe.Pointer(&src.Cb[cOff])),
-// //			C.JSAMPROW(unsafe.Pointer(&src.Cr[cOff])),
-// //			src.YStride,
-// //			src.CStride,
-// //		)
-// //		if err != nil {
-// //			return err
-// //		}
-// //		v += line
-// //	}
-// //	return
-// //}
-// //
-// //// encode image.RGBA
-// //func encodeRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.RGBA, p *EncoderOptions) (err error) {
-// //	// Set up compression parameters
-// //	w, h := src.Bounds().Dx(), src.Bounds().Dy()
-// //	cinfo.image_width = C.JDIMENSION(w)
-// //	cinfo.image_height = C.JDIMENSION(h)
-// //	cinfo.input_components = 4
-// //	cinfo.in_color_space = getJCS_EXT_RGBA()
-// //	if cinfo.in_color_space == C.JCS_UNKNOWN {
-// //		return errors.New("JCS_EXT_RGBA is not supported (probably built without libjpeg-turbo)")
-// //	}
-// //	setupEncoderOptions(cinfo, p)
-// //
-// //	// Start compression
-//
-//		err = startCompress(cinfo)
-//		if err != nil {
-//			return
-//		}
-//		defer func() {
-//			ferr := finishCompress(cinfo)
-//			if ferr != nil && err == nil {
-//				err = ferr
-//			}
-//		}()
-//
-//		for v := 0; v < h; {
-//			line, err := writeScanline(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), C.JDIMENSION(1))
-//			if err != nil {
-//				return err
-//			}
-//			v += line
-//		}
-//		return
-//	}
-//
+// encode image.YCbCr
+func encodeYCbCr(cinfo *C.struct_jpeg_compress_struct, src *image.YCbCr, p *EncoderOptions) (err error) {
+	// Set up compression parameters
+	w, h := src.Bounds().Dx(), src.Bounds().Dy()
+	cinfo.image_width = C.JDIMENSION(w)
+	cinfo.image_height = C.JDIMENSION(h)
+	cinfo.input_components = 3
+	cinfo.in_color_space = C.JCS_YCbCr
+
+	setupEncoderOptions(cinfo, p)
+
+	compInfo := (*[3]C.jpeg_component_info)(unsafe.Pointer(cinfo.comp_info))
+	cVDiv := 1
+	switch src.SubsampleRatio {
+	case image.YCbCrSubsampleRatio444:
+		// 1x1,1x1,1x1
+		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 1, 1
+		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
+		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
+	case image.YCbCrSubsampleRatio440:
+		// 1x2,1x1,1x1
+		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 1, 2
+		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
+		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
+		cVDiv = 2
+	case image.YCbCrSubsampleRatio422:
+		// 2x1,1x1,1x1
+		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 2, 1
+		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
+		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
+	case image.YCbCrSubsampleRatio420:
+		// 2x2,1x1,1x1
+		compInfo[Y].h_samp_factor, compInfo[Y].v_samp_factor = 2, 2
+		compInfo[Cb].h_samp_factor, compInfo[Cb].v_samp_factor = 1, 1
+		compInfo[Cr].h_samp_factor, compInfo[Cr].v_samp_factor = 1, 1
+		cVDiv = 2
+	}
+
+	// libjpeg raw data in is in planar format, which avoids unnecessary
+	// planar->packed->planar conversions.
+	cinfo.raw_data_in = C.TRUE
+
+	// Start compression
+	err = startCompress(cinfo)
+	if err != nil {
+		return
+	}
+	defer func() {
+		ferr := finishCompress(cinfo)
+		if ferr != nil && err == nil {
+			err = ferr
+		}
+	}()
+
+	for v := 0; v < h; {
+		yOff, cOff := v*src.YStride, v/cVDiv*src.CStride
+		line, err := writeMCUYCbCr(
+			cinfo,
+			C.JSAMPROW(unsafe.Pointer(&src.Y[yOff])),
+			C.JSAMPROW(unsafe.Pointer(&src.Cb[cOff])),
+			C.JSAMPROW(unsafe.Pointer(&src.Cr[cOff])),
+			src.YStride,
+			src.CStride,
+		)
+		if err != nil {
+			return err
+		}
+		v += line
+	}
+	return
+}
+
+// encode image.RGBA
+func encodeRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.RGBA, p *EncoderOptions) (err error) {
+	// Set up compression parameters
+	w, h := src.Bounds().Dx(), src.Bounds().Dy()
+	cinfo.image_width = C.JDIMENSION(w)
+	cinfo.image_height = C.JDIMENSION(h)
+	cinfo.input_components = 4
+	cinfo.in_color_space = getJCS_EXT_RGBA()
+	if cinfo.in_color_space == C.JCS_UNKNOWN {
+		return errors.New("JCS_EXT_RGBA is not supported (probably built without libjpeg-turbo)")
+	}
+	setupEncoderOptions(cinfo, p)
+
+	// Start compression
+
+	err = startCompress(cinfo)
+	if err != nil {
+		return
+	}
+	defer func() {
+		ferr := finishCompress(cinfo)
+		if ferr != nil && err == nil {
+			err = ferr
+		}
+	}()
+
+	for v := 0; v < h; {
+		line, err := writeScanline(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), C.JDIMENSION(1))
+		if err != nil {
+			return err
+		}
+		v += line
+	}
+	return
+}
+
 // // encode image.NRGBA
 func encodeNRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.NRGBA, p *EncoderOptions) (err error) {
 	// Set up compression parameters
@@ -542,46 +540,45 @@ func encodeNRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.NRGBA, p *Enco
 //		return
 //	}
 //
-// // encode image.Gray
-//
-//	func encodeGray(cinfo *C.struct_jpeg_compress_struct, src *image.Gray, p *EncoderOptions) (err error) {
-//		// Set up compression parameters
-//		w, h := src.Bounds().Dx(), src.Bounds().Dy()
-//		cinfo.image_width = C.JDIMENSION(w)
-//		cinfo.image_height = C.JDIMENSION(h)
-//		cinfo.input_components = 1
-//		cinfo.in_color_space = C.JCS_GRAYSCALE
-//
-//		setupEncoderOptions(cinfo, p)
-//
-//		compInfo := (*C.jpeg_component_info)(unsafe.Pointer(cinfo.comp_info))
-//		compInfo.h_samp_factor, compInfo.v_samp_factor = 1, 1
-//
-//		// libjpeg raw data in is in planar format, which avoids unnecessary
-//		// planar->packed->planar conversions.
-//		cinfo.raw_data_in = C.TRUE
-//
-//		// Start compression
-//		err = startCompress(cinfo)
-//		if err != nil {
-//			return
-//		}
-//		defer func() {
-//			ferr := finishCompress(cinfo)
-//			if ferr != nil && err == nil {
-//				err = ferr
-//			}
-//		}()
-//
-//		for v := 0; v < h; {
-//			line, err := writeMCUGray(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), src.Stride)
-//			if err != nil {
-//				return err
-//			}
-//			v += line
-//		}
-//		return
-//	}
+// encode image.Gray
+func encodeGray(cinfo *C.struct_jpeg_compress_struct, src *image.Gray, p *EncoderOptions) (err error) {
+	// Set up compression parameters
+	w, h := src.Bounds().Dx(), src.Bounds().Dy()
+	cinfo.image_width = C.JDIMENSION(w)
+	cinfo.image_height = C.JDIMENSION(h)
+	cinfo.input_components = 1
+	cinfo.in_color_space = C.JCS_GRAYSCALE
+
+	setupEncoderOptions(cinfo, p)
+
+	compInfo := (*C.jpeg_component_info)(unsafe.Pointer(cinfo.comp_info))
+	compInfo.h_samp_factor, compInfo.v_samp_factor = 1, 1
+
+	// libjpeg raw data in is in planar format, which avoids unnecessary
+	// planar->packed->planar conversions.
+	cinfo.raw_data_in = C.TRUE
+
+	// Start compression
+	err = startCompress(cinfo)
+	if err != nil {
+		return
+	}
+	defer func() {
+		ferr := finishCompress(cinfo)
+		if ferr != nil && err == nil {
+			err = ferr
+		}
+	}()
+
+	for v := 0; v < h; {
+		line, err := writeMCUGray(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), src.Stride)
+		if err != nil {
+			return err
+		}
+		v += line
+	}
+	return
+}
 func setupEncoderOptions(cinfo *C.struct_jpeg_compress_struct, opt *EncoderOptions) {
 	C.jpeg_set_defaults_fn(cinfo) //attention ici on a pas la meme que celle du header
 
