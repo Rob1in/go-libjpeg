@@ -26,7 +26,7 @@ func GetHandle(libs []string) (*LibHandle, error) {
 	for _, name := range libs {
 		libname := C.CString(name)
 		defer C.free(unsafe.Pointer(libname))
-		handle := C.dlopen(libname, C.RTLD_GLOBAL) /// Il Y A EU CHANGEMENT ICI
+		handle := C.dlopen(libname, C.RTLD_NOW|C.RTLD_GLOBAL) /// Il Y A EU CHANGEMENT ICI
 		if handle != nil {
 			h := &LibHandle{
 				Handle:  handle,

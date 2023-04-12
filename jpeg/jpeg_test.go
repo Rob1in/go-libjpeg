@@ -4,15 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/viam-labs/go-libjpeg/jpeg"
+	"github.com/viam-labs/go-libjpeg/test/util"
 	"image"
 	"image/color"
 	nativeJPEG "image/jpeg"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/viam-labs/go-libjpeg/jpeg"
-	"github.com/viam-labs/go-libjpeg/test/util"
 )
 
 var naturalImageFiles = []string{
@@ -382,7 +381,6 @@ func TestEncodeFailsWithEmptyImage(t *testing.T) {
 		t.Errorf("got no error with empty image")
 	}
 }
-
 func newRGBA() *image.RGBA {
 	rgba := image.NewRGBA(image.Rect(0, 0, 4, 8))
 	for i := 0; i < 4; i++ {

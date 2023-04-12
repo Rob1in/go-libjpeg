@@ -7,21 +7,7 @@ package jpeg
 #include "jpeg.h"
 #include <dlfcn.h>
 
-//extern struct my_symbol_table symbol_table;
-void (*jpeg_start_compress_ptr)(j_compress_ptr, boolean);
-// ca ca marche hamdoulilah
-
-void (*jpeg_CreateCompress_ptr)(j_compress_ptr, int, size_t);
-struct jpeg_error_mgr * (*jpeg_std_error_ptr)(struct jpeg_error_mgr *err);
-void (*jpeg_destroy_compress_ptr)(j_compress_ptr);
-void (*jpeg_set_defaults_ptr)(j_compress_ptr);
-void (*jpeg_set_quality_ptr)(j_compress_ptr, int, boolean);
-void (*jpeg_simple_progression_ptr)(j_compress_ptr);
-void (*jpeg_finish_compress_ptr)(j_compress_ptr);
-JDIMENSION (*jpeg_write_scanlines_ptr) (j_compress_ptr, JSAMPARRAY, JDIMENSION);
-
-//(void) (jpeg_CreateCompress_ptr)(j_compress_ptr, int version,
-//                                 size_t structsize);
+extern SymbolsTable symbols_table;
 
 static struct jpeg_compress_struct *new_compress(void) {
 	struct jpeg_compress_struct *cinfo = (struct jpeg_compress_struct *) calloc(sizeof(struct jpeg_compress_struct), 1);
@@ -36,15 +22,7 @@ static struct jpeg_compress_struct *new_compress(void) {
 	}
 
 	//cinfo->err = jpeg_std_error(&jerr->pub);  <-- ce qu'on remplace
-
-	if (jpeg_std_error_ptr == NULL) {
-		jpeg_std_error_ptr = dlsym(RTLD_DEFAULT,"jpeg_std_error");
-		if (jpeg_std_error_ptr == NULL) {
-			char *error = dlerror(); //il faudra la donner au error mgr
-           //return 1;
-		}
-	}
-	cinfo->err = jpeg_std_error_ptr(&jerr->pub);
+	cinfo->err = symbols_table.jpeg_std_error_ptr(&jerr->pub);
 
 
 jerr->pub.error_exit = (void *)error_longjmp;
@@ -53,24 +31,8 @@ jerr->pub.error_exit = (void *)error_longjmp;
 		free(cinfo);
 		return NULL;
 	}
-	//jpeg_create_compress(cinfo);
-	//ici on remplace la macro et apres on fait le dlsym
-	if (jpeg_CreateCompress_ptr == NULL) {
-		jpeg_CreateCompress_ptr = dlsym(RTLD_DEFAULT,"jpeg_CreateCompress");
-		if (jpeg_CreateCompress_ptr == NULL) {
-			char *error;
-			error = dlerror(); //il faudra la donner au error mgr
-           //return 1;
-		}
-	}
-	char *error;
-	error = dlerror();
-	if (error != NULL){
-		printf ("Ca a merde ici: (%s)\n", error);
-	}
 
-
-	jpeg_CreateCompress_ptr((cinfo), JPEG_LIB_VERSION, (size_t)sizeof(struct jpeg_compress_struct));
+	symbols_table.jpeg_CreateCompress_ptr((cinfo), JPEG_LIB_VERSION, (size_t)sizeof(struct jpeg_compress_struct));
 
 	return cinfo;
 }
@@ -78,14 +40,7 @@ jerr->pub.error_exit = (void *)error_longjmp;
 static void destroy_compress(struct jpeg_compress_struct *cinfo) {
 	free(cinfo->err);
 	//jpeg_destroy_compress(cinfo); ce qu'on remplace
-	if (jpeg_destroy_compress_ptr == NULL) {
-		jpeg_destroy_compress_ptr = dlsym(RTLD_DEFAULT,"jpeg_destroy_compress");
-		if (jpeg_destroy_compress_ptr == NULL) {
-			char *error = dlerror(); //il faudra la donner au error mgr
-           //return 1;
-		}
-	}
-	jpeg_destroy_compress_ptr(cinfo);
+	symbols_table.jpeg_destroy_compress_ptr(cinfo);
 
 	free(cinfo);
 }
@@ -97,16 +52,8 @@ static JDIMENSION write_scanlines(j_compress_ptr cinfo, JSAMPROW row, JDIMENSION
 		*msg_code = err->pub.msg_code;
 		return 0;
 	}
-
 	*msg_code = 0;
-	if (jpeg_write_scanlines_ptr == NULL) {
-		jpeg_write_scanlines_ptr = dlsym(RTLD_DEFAULT,"jpeg_write_scanlines");
-		if (jpeg_write_scanlines_ptr == NULL) {
-			char *error = dlerror();
-            return 1;
-		}
-	}
-	return jpeg_write_scanlines_ptr(cinfo, &row, max_lines);
+	return symbols_table.jpeg_write_scanlines_ptr(cinfo, &row, max_lines);
 }
 
 static JDIMENSION write_mcu_gray(struct jpeg_compress_struct *cinfo, JSAMPROW pix, int stride, int *msg_code) {
@@ -134,7 +81,7 @@ static JDIMENSION write_mcu_gray(struct jpeg_compress_struct *cinfo, JSAMPROW pi
 
 	// Get the data
 	*msg_code = 0;
-	return jpeg_write_raw_data(cinfo, &rows, height);
+	return symbols_table.jpeg_write_raw_data_ptr(cinfo, &rows, height);
 }
 
 static JDIMENSION write_mcu_ycbcr(struct jpeg_compress_struct *cinfo, JSAMPROW y_row, JSAMPROW cb_row, JSAMPROW cr_row, int y_stride, int c_stride, int *msg_code) {
@@ -168,31 +115,17 @@ static JDIMENSION write_mcu_ycbcr(struct jpeg_compress_struct *cinfo, JSAMPROW y
 
 	// Get the data
 	*msg_code = 0;
-	return jpeg_write_raw_data(cinfo, image, y_h);
+
+	return symbols_table.jpeg_write_raw_data_ptr(cinfo, image, y_h);
 }
 
 static int start_compress(j_compress_ptr cinfo, boolean write_all_tables)
 {
-	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
 		return err->pub.msg_code;
 	}
-    if (jpeg_start_compress_ptr == NULL) {
-		jpeg_start_compress_ptr = dlsym(RTLD_DEFAULT,"jpeg_start_compress");
-		if (jpeg_start_compress_ptr == NULL) {
-			char *error = dlerror();
-            return 1;
-		}
-	}
-
-	//char *error;
-	//error = dlerror();
-	//if (error != NULL){
-	//	printf ("Ca a merde ici: (%s)\n", error);
-	//}
-	jpeg_start_compress_ptr(cinfo, write_all_tables);
-
+	symbols_table.jpeg_start_compress_ptr(cinfo, write_all_tables);
 	return 0;
 }
 
@@ -203,14 +136,7 @@ static int finish_compress(j_compress_ptr cinfo)
 	if (setjmp(err->jmpbuf) != 0) {
 		return err->pub.msg_code;
 	}
-	if (jpeg_finish_compress_ptr == NULL) {
-		jpeg_finish_compress_ptr = dlsym(RTLD_DEFAULT,"jpeg_finish_compress");
-		if (jpeg_finish_compress_ptr == NULL) {
-			char *error = dlerror();
-            return 1;
-		}
-	}
-	jpeg_finish_compress_ptr(cinfo);
+	symbols_table.jpeg_finish_compress_ptr(cinfo);
 
 	return 0;
 }
@@ -219,44 +145,23 @@ static int finish_compress(j_compress_ptr cinfo)
 //A PARTIR D'ICI C'EST MOI QUI AI ECRIT CA RISQUE D'ETRE
 
 void  jpeg_set_defaults_fn(j_compress_ptr cinfo){
-	 if (jpeg_set_defaults_ptr == NULL) {
-		jpeg_set_defaults_ptr = dlsym(RTLD_DEFAULT,"jpeg_set_defaults");
-		if (jpeg_set_defaults_ptr == NULL) {
-			char *error = dlerror();
-            //return 1;
-		}
-	}
-	jpeg_set_defaults_ptr(cinfo);
+	symbols_table.jpeg_set_defaults_ptr(cinfo);
 }
 
 
-void jpeg_set_quality_fn(j_compress_ptr cinfo, int quality,
-                              boolean force_baseline){
-	if (jpeg_set_quality_ptr == NULL) {
-		jpeg_set_quality_ptr = dlsym(RTLD_DEFAULT,"jpeg_set_quality");
-		if (jpeg_set_quality_ptr == NULL) {
-			char *error = dlerror();
-            //return 1;
-		}
-	}
-	jpeg_set_quality_ptr(cinfo, quality, force_baseline);
+void jpeg_set_quality_fn(j_compress_ptr cinfo, int quality, boolean force_baseline){
+	symbols_table.jpeg_set_quality_ptr(cinfo, quality, force_baseline);
 }
 
 void  jpeg_simple_progression_fn(j_compress_ptr cinfo){
-	 if (jpeg_simple_progression_ptr == NULL) {
-		jpeg_simple_progression_ptr = dlsym(RTLD_DEFAULT,"jpeg_simple_progression");
-		if (jpeg_simple_progression_ptr == NULL) {
-			char *error = dlerror();
-            //return 1;
-		}
-	}
-	jpeg_simple_progression_ptr(cinfo);
+	symbols_table.jpeg_simple_progression_ptr(cinfo);
 }
 */
 import "C"
 
 import (
 	"errors"
+	"github.com/viam-labs/go-libjpeg/rgb"
 	"image"
 	"io"
 	"unsafe"
@@ -351,8 +256,8 @@ func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
 		err = encodeGray(cinfo, s, opt)
 	case *image.RGBA:
 		err = encodeRGBA(cinfo, s, opt)
-	//case *rgb.Image:
-	//	err = encodeRGB(cinfo, s, opt)
+	case *rgb.Image:
+		err = encodeRGB(cinfo, s, opt)
 	case *image.NRGBA:
 		err = encodeNRGBA(cinfo, s, opt)
 	default:
@@ -506,40 +411,39 @@ func encodeNRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.NRGBA, p *Enco
 	return
 }
 
-// // encode rgb.Image.
-//
-//	func encodeRGB(cinfo *C.struct_jpeg_compress_struct, src *rgb.Image, p *EncoderOptions) (err error) {
-//		// Set up compression parameters
-//		w, h := src.Bounds().Dx(), src.Bounds().Dy()
-//		cinfo.image_width = C.JDIMENSION(w)
-//		cinfo.image_height = C.JDIMENSION(h)
-//		cinfo.input_components = 3
-//		cinfo.in_color_space = C.JCS_RGB
-//
-//		setupEncoderOptions(cinfo, p)
-//
-//		// Start compression
-//		err = startCompress(cinfo)
-//		if err != nil {
-//			return
-//		}
-//		defer func() {
-//			ferr := finishCompress(cinfo)
-//			if ferr != nil && err == nil {
-//				err = ferr
-//			}
-//		}()
-//
-//		for v := 0; v < h; {
-//			line, err := writeScanline(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), C.JDIMENSION(1))
-//			if err != nil {
-//				return err
-//			}
-//			v += line
-//		}
-//		return
-//	}
-//
+// encode rgb.Image.
+func encodeRGB(cinfo *C.struct_jpeg_compress_struct, src *rgb.Image, p *EncoderOptions) (err error) {
+	// Set up compression parameters
+	w, h := src.Bounds().Dx(), src.Bounds().Dy()
+	cinfo.image_width = C.JDIMENSION(w)
+	cinfo.image_height = C.JDIMENSION(h)
+	cinfo.input_components = 3
+	cinfo.in_color_space = C.JCS_RGB
+
+	setupEncoderOptions(cinfo, p)
+
+	// Start compression
+	err = startCompress(cinfo)
+	if err != nil {
+		return
+	}
+	defer func() {
+		ferr := finishCompress(cinfo)
+		if ferr != nil && err == nil {
+			err = ferr
+		}
+	}()
+
+	for v := 0; v < h; {
+		line, err := writeScanline(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), C.JDIMENSION(1))
+		if err != nil {
+			return err
+		}
+		v += line
+	}
+	return
+}
+
 // encode image.Gray
 func encodeGray(cinfo *C.struct_jpeg_compress_struct, src *image.Gray, p *EncoderOptions) (err error) {
 	// Set up compression parameters
