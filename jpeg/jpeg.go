@@ -130,9 +130,8 @@ func init() {
 		}
 	}
 
-	if handle == nil {
-		HasLibJpeg = false
-	} else {
+	if handle != nil {
+		HasLibJpeg = true
 		C.init(handle)
 	}
 
