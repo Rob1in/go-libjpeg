@@ -257,6 +257,9 @@ func SupportRGBA() bool {
 // Decode reads a JPEG data stream from r and returns decoded image as an image.Image.
 // Output image has YCbCr colors or 8bit Grayscale.
 func Decode(r io.Reader, options *DecoderOptions) (dest image.Image, err error) {
+	if !HasLibJpeg {
+		return nil, ErrLibjpegNotFound
+	}
 	dinfo := newDecompress(r)
 	if dinfo == nil {
 		return nil, errors.New("allocation failed")

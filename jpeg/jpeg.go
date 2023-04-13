@@ -68,8 +68,11 @@ void init(void* handle){
 */
 import "C"
 import (
+	"errors"
 	"fmt"
+	"os/exec"
 	"runtime"
+	"strings"
 	"unsafe"
 )
 
@@ -79,6 +82,9 @@ const (
 	Cb = 1
 	Cr = 2
 )
+
+var HasLibJpeg bool
+var ErrLibjpegNotFound = errors.New("unable to find libjpeg")
 
 // DCTMethod is the DCT/IDCT method type.
 type DCTMethod C.J_DCT_METHOD
@@ -102,13 +108,14 @@ func init() {
 	var locs []string
 	switch runtime.GOOS {
 	case "darwin":
-		locs = []string{"libfoo.dylib", "/opt/homebrew/lib/libjpeg.dylib"}
-		fmt.Println("Running on macOS")
+		locs = []string{"libjpeg.dylib"}
+		addBrewPathDarwin(&locs)
+		fmt.Print(locs)
 	case "linux":
 		locs = []string{"libjpeg.so"}
-		fmt.Println("Running on Linux")
 	case "windows":
-		fmt.Println("Running on Windows")
+		//TODO ERIC
+		locs = []string{"libjpeg.dll"}
 	default:
 		fmt.Println("Unknown operating system")
 	}
@@ -119,12 +126,26 @@ func init() {
 		handle = C.dlopen(loc, C.RTLD_NOW)
 		C.free(unsafe.Pointer(loc))
 		if handle == nil {
-			fmt.Println("Couldn't find handle at location:", l)
+			fmt.Println("Couldn't open handle for libjpeg at location:", l)
 		}
 	}
 
 	if handle == nil {
-		panic("install libjpeg dependency")
+		HasLibJpeg = false
+	} else {
+		C.init(handle)
 	}
-	C.init(handle)
+
+}
+
+func addBrewPathDarwin(slicePtr *[]string) {
+	cmd := exec.Command("brew", "--repo")
+	output, err := cmd.Output()
+	if err != nil {
+		return
+	}
+	//TODO add the case for "brew not found"
+	path := strings.Trim(string(output), "\n") + "/lib/libjpeg.dylib"
+	*slicePtr = append(*slicePtr, path)
+	return
 }

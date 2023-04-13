@@ -241,7 +241,9 @@ func writeMCUYCbCr(cinfo *C.struct_jpeg_compress_struct, y, cb, cr C.JSAMPROW, y
 
 // Encode encodes src image and writes into w as JPEG format data.
 func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
-
+	if !HasLibJpeg {
+		return ErrLibjpegNotFound
+	}
 	var cinfo *C.struct_jpeg_compress_struct
 	cinfo, err = newCompress(w)
 	if err != nil {
