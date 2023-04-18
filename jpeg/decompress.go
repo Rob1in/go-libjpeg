@@ -248,6 +248,9 @@ type DecoderOptions struct {
 
 // SupportRGBA returns whether RGBA decoding is supported.
 func SupportRGBA() bool {
+	if !HasLibJpeg {
+		return false
+	}
 	if getJCS_EXT_RGBA() == C.JCS_UNKNOWN {
 		return false
 	}
@@ -421,6 +424,9 @@ func decodeRGB(dinfo *C.struct_jpeg_decompress_struct) (dest *rgb.Image, err err
 
 // DecodeIntoRGB reads a JPEG data stream from r and returns decoded image as an rgb.Image with RGB colors.
 func DecodeIntoRGB(r io.Reader, options *DecoderOptions) (dest *rgb.Image, err error) {
+	if !HasLibJpeg {
+		return nil, ErrLibjpegNotFound
+	}
 	dinfo := newDecompress(r)
 	if dinfo == nil {
 		return nil, errors.New("allocation failed")
@@ -439,6 +445,9 @@ func DecodeIntoRGB(r io.Reader, options *DecoderOptions) (dest *rgb.Image, err e
 // DecodeIntoRGBA reads a JPEG data stream from r and returns decoded image as an image.RGBA with RGBA colors.
 // This function only works with libjpeg-turbo, not libjpeg.
 func DecodeIntoRGBA(r io.Reader, options *DecoderOptions) (dest *image.RGBA, err error) {
+	if !HasLibJpeg {
+		return nil, ErrLibjpegNotFound
+	}
 	dinfo := newDecompress(r)
 	if dinfo == nil {
 		return nil, errors.New("allocation failed")
@@ -476,6 +485,9 @@ func DecodeIntoRGBA(r io.Reader, options *DecoderOptions) (dest *image.RGBA, err
 
 // DecodeConfig returns the color model and dimensions of a JPEG image without decoding the entire image.
 func DecodeConfig(r io.Reader) (config image.Config, err error) {
+	if !HasLibJpeg {
+		return image.Config{}, ErrLibjpegNotFound
+	}
 	dinfo := newDecompress(r)
 	if dinfo == nil {
 		err = errors.New("allocation failed")

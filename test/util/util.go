@@ -75,6 +75,9 @@ func CreateFile(name string) (f *os.File) {
 
 // WritePNG encodes and writes image into PNG file.
 func WritePNG(img image.Image, name string) {
+	if img == nil {
+		return
+	}
 	f, err := os.Create(GetOutFilePath(name))
 	if err != nil {
 		panic(err)

@@ -26,43 +26,48 @@ static J_COLOR_SPACE getJCS_EXT_RGBA(void) {
 
 SymbolsTable symbols_table;
 
-void get_function_ptr_from_handle(void *lib_handle, void **function_ptr, const char *symbol_name) {
- dlerror();
- void *function = dlsym(lib_handle, symbol_name);
- char *error = dlerror();
- if (error != NULL) {
-     fprintf(stderr, "Error while looking up symbol %s: %s\n", symbol_name, error);
-     return;
- }
- *function_ptr = function;
+int get_function_ptr_from_handle(void *lib_handle, void **function_ptr, const char *symbol_name) {
+    dlerror();
+    void *function = dlsym(lib_handle, symbol_name);
+    char *error = dlerror();
+    if (error != NULL) {
+        fprintf(stderr, "Error while looking up symbol %s: %s\n", symbol_name, error);
+        return -1;
+    }
+    *function_ptr = function;
+    return 0;
 }
 
-void populate_symbols_table_from_handle(void *lib_handle, SymbolsTable *symbols){
-
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_start_compress_ptr, "jpeg_start_compress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_CreateCompress_ptr, "jpeg_CreateCompress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_std_error_ptr, "jpeg_std_error");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_destroy_compress_ptr, "jpeg_destroy_compress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_set_defaults_ptr, "jpeg_set_defaults");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_set_quality_ptr, "jpeg_set_quality");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_simple_progression_ptr, "jpeg_simple_progression");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_finish_compress_ptr, "jpeg_finish_compress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_write_raw_data_ptr, "jpeg_write_raw_data");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_write_scanlines_ptr, "jpeg_write_scanlines");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_CreateDecompress_ptr, "jpeg_CreateDecompress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_resync_to_restart_ptr, "jpeg_resync_to_restart");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_destroy_decompress_ptr, "jpeg_destroy_decompress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_read_header_ptr, "jpeg_read_header");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_start_decompress_ptr, "jpeg_start_decompress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_read_raw_data_ptr, "jpeg_read_raw_data");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_finish_decompress_ptr, "jpeg_finish_decompress");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_calc_output_dimensions_ptr, "jpeg_calc_output_dimensions");
-	get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_read_scanlines_ptr, "jpeg_read_scanlines");
-
+int populate_symbols_table_from_handle(void *lib_handle, SymbolsTable *symbols){
+	int ret_code = 0;
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_start_compress_ptr, "jpeg_start_compress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_CreateCompress_ptr, "jpeg_CreateCompress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_std_error_ptr, "jpeg_std_error");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_destroy_compress_ptr, "jpeg_destroy_compress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_set_defaults_ptr, "jpeg_set_defaults");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_set_quality_ptr, "jpeg_set_quality");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_simple_progression_ptr, "jpeg_simple_progression");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_finish_compress_ptr, "jpeg_finish_compress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_write_raw_data_ptr, "jpeg_write_raw_data");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_write_scanlines_ptr, "jpeg_write_scanlines");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_CreateDecompress_ptr, "jpeg_CreateDecompress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_resync_to_restart_ptr, "jpeg_resync_to_restart");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_destroy_decompress_ptr, "jpeg_destroy_decompress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_read_header_ptr, "jpeg_read_header");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_start_decompress_ptr, "jpeg_start_decompress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_read_raw_data_ptr, "jpeg_read_raw_data");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_finish_decompress_ptr, "jpeg_finish_decompress");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_calc_output_dimensions_ptr, "jpeg_calc_output_dimensions");
+	ret_code |= get_function_ptr_from_handle(lib_handle, (void**)&symbols->jpeg_read_scanlines_ptr, "jpeg_read_scanlines");
+	return ret_code;
 }
 
-void init(void* handle){
-	populate_symbols_table_from_handle(handle, &symbols_table);
+int init(void* handle){
+	int ret_code = populate_symbols_table_from_handle(handle, &symbols_table);
+	if (ret_code != 0) {
+        return -1;
+    }
+    return 0;
 }
 
 */
@@ -71,6 +76,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"unsafe"
@@ -84,7 +90,7 @@ const (
 )
 
 var HasLibJpeg bool
-var ErrLibjpegNotFound = errors.New("unable to find libjpeg")
+var ErrLibjpegNotFound = errors.New("Unable to load libjpeg or resolve all symbols")
 
 // DCTMethod is the DCT/IDCT method type.
 type DCTMethod C.J_DCT_METHOD
@@ -103,48 +109,47 @@ func getJCS_EXT_RGBA() C.J_COLOR_SPACE {
 }
 
 func init() {
-
-	var handle unsafe.Pointer
 	var locs []string
 	switch runtime.GOOS {
 	case "darwin":
 		locs = []string{"libjpeg.dylib"}
-		addBrewPathDarwin(&locs)
-		fmt.Print(locs)
+		addBrewPath(&locs, "libjpeg.dylib")
 	case "linux":
 		locs = []string{"libjpeg.so"}
+		addBrewPath(&locs, "libjpeg.so")
 	case "windows":
-		//TODO ERIC
+		//TODO
 		locs = []string{"libjpeg.dll"}
 	default:
 		fmt.Println("Unknown operating system")
+		return
 	}
 
 	for _, l := range locs {
 		loc := C.CString(l)
-		//defer C.free(unsafe.Pointer(loc))
-		handle = C.dlopen(loc, C.RTLD_NOW)
-		C.free(unsafe.Pointer(loc))
+		defer C.free(unsafe.Pointer(loc))
+		handle := C.dlopen(loc, C.RTLD_NOW)
 		if handle == nil {
 			fmt.Println("Couldn't open handle for libjpeg at location:", l)
+			continue
+		}
+		if err := C.init(handle); err == 0 {
+			HasLibJpeg = true
+			break
 		}
 	}
-
-	if handle != nil {
-		HasLibJpeg = true
-		C.init(handle)
-	}
-
 }
 
-func addBrewPathDarwin(slicePtr *[]string) {
-	cmd := exec.Command("brew", "--repo")
-	output, err := cmd.Output()
+func addBrewPath(slicePtr *[]string, filename string) {
+
+	repoCmd := exec.Command("brew", "--repo")
+	repoOutput, err := repoCmd.Output()
 	if err != nil {
 		return
 	}
-	//TODO add the case for "brew not found"
-	path := strings.Trim(string(output), "\n") + "/lib/libjpeg.dylib"
-	*slicePtr = append(*slicePtr, path)
-	return
+	repoPath := strings.TrimSpace(string(repoOutput))
+	libPath := filepath.Join(repoPath, "lib", filename)
+	if filepath.IsAbs(libPath) {
+		*slicePtr = append(*slicePtr, libPath)
+	}
 }
