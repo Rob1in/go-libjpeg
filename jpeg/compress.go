@@ -21,11 +21,8 @@ static struct jpeg_compress_struct *new_compress(void) {
 		return NULL;
 	}
 
-	//cinfo->err = jpeg_std_error(&jerr->pub);  <-- ce qu'on remplace
 	cinfo->err = symbols_table.jpeg_std_error_ptr(&jerr->pub);
-
-
-jerr->pub.error_exit = (void *)error_longjmp;
+	jerr->pub.error_exit = (void *)error_longjmp;
 	if (setjmp(jerr->jmpbuf) != 0) {
 		free(jerr);
 		free(cinfo);
@@ -39,14 +36,11 @@ jerr->pub.error_exit = (void *)error_longjmp;
 
 static void destroy_compress(struct jpeg_compress_struct *cinfo) {
 	free(cinfo->err);
-	//jpeg_destroy_compress(cinfo); ce qu'on remplace
 	symbols_table.jpeg_destroy_compress_ptr(cinfo);
-
 	free(cinfo);
 }
 
 static JDIMENSION write_scanlines(j_compress_ptr cinfo, JSAMPROW row, JDIMENSION max_lines, int *msg_code) {
-	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
 		*msg_code = err->pub.msg_code;
@@ -57,7 +51,6 @@ static JDIMENSION write_scanlines(j_compress_ptr cinfo, JSAMPROW row, JDIMENSION
 }
 
 static JDIMENSION write_mcu_gray(struct jpeg_compress_struct *cinfo, JSAMPROW pix, int stride, int *msg_code) {
-	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
 		*msg_code = err->pub.msg_code;
@@ -121,10 +114,12 @@ static JDIMENSION write_mcu_ycbcr(struct jpeg_compress_struct *cinfo, JSAMPROW y
 
 static int start_compress(j_compress_ptr cinfo, boolean write_all_tables)
 {
+	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
 		return err->pub.msg_code;
 	}
+
 	symbols_table.jpeg_start_compress_ptr(cinfo, write_all_tables);
 	return 0;
 }
@@ -140,9 +135,6 @@ static int finish_compress(j_compress_ptr cinfo)
 
 	return 0;
 }
-
-
-//A PARTIR D'ICI C'EST MOI QUI AI ECRIT CA RISQUE D'ETRE
 
 void  jpeg_set_defaults_fn(j_compress_ptr cinfo){
 	symbols_table.jpeg_set_defaults_ptr(cinfo);
@@ -250,7 +242,7 @@ func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
 		return
 	}
 	defer destroyCompress(cinfo)
-	//
+
 	switch s := src.(type) {
 	case *image.YCbCr:
 		err = encodeYCbCr(cinfo, s, opt)
@@ -352,10 +344,10 @@ func encodeRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.RGBA, p *Encode
 	if cinfo.in_color_space == C.JCS_UNKNOWN {
 		return errors.New("JCS_EXT_RGBA is not supported (probably built without libjpeg-turbo)")
 	}
+
 	setupEncoderOptions(cinfo, p)
 
 	// Start compression
-
 	err = startCompress(cinfo)
 	if err != nil {
 		return
@@ -377,7 +369,7 @@ func encodeRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.RGBA, p *Encode
 	return
 }
 
-// // encode image.NRGBA
+// encode image.NRGBA
 func encodeNRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.NRGBA, p *EncoderOptions) (err error) {
 	// Set up compression parameters
 	w, h := src.Bounds().Dx(), src.Bounds().Dy()
@@ -486,8 +478,7 @@ func encodeGray(cinfo *C.struct_jpeg_compress_struct, src *image.Gray, p *Encode
 	return
 }
 func setupEncoderOptions(cinfo *C.struct_jpeg_compress_struct, opt *EncoderOptions) {
-	C.jpeg_set_defaults_fn(cinfo) //attention ici on a pas la meme que celle du header
-
+	C.jpeg_set_defaults_fn(cinfo)
 	C.jpeg_set_quality_fn(cinfo, C.int(opt.Quality), C.TRUE)
 	if opt.OptimizeCoding {
 		cinfo.optimize_coding = C.TRUE

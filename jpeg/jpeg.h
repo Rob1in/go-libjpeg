@@ -8,9 +8,7 @@
 
 // the dimension multiple to which data buffers should be aligned.
 #define ALIGN_SIZE 16
-//struct my_symbol_table {
-//
-//}
+
 struct my_error_mgr {
 	struct jpeg_error_mgr pub;
 	jmp_buf jmpbuf;

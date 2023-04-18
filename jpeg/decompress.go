@@ -154,7 +154,6 @@ static JDIMENSION read_mcu_ycbcr(struct jpeg_decompress_struct *dinfo, JSAMPROW 
 void jpeg_calc_output_dimensions_fn(j_decompress_ptr cinfo){
 	symbols_table.jpeg_calc_output_dimensions_ptr(cinfo);
 }
-
 */
 import "C"
 
@@ -311,7 +310,7 @@ func decodeGray(dinfo *C.struct_jpeg_decompress_struct) (dest *image.Gray, err e
 			err = ferr
 		}
 	}()
-	//
+
 	compInfo := (*[1]C.jpeg_component_info)(unsafe.Pointer(dinfo.comp_info))
 	dest = NewGrayAligned(image.Rect(0, 0, int(compInfo[0].downsampled_width), int(compInfo[0].downsampled_height)))
 
@@ -412,7 +411,7 @@ func readRGBScanlines(dinfo *C.struct_jpeg_decompress_struct, pix []uint8, strid
 	return
 }
 
-// // TODO: supports decoding into image.RGBA instead of rgb.Image.
+// TODO: supports decoding into image.RGBA instead of rgb.Image.
 func decodeRGB(dinfo *C.struct_jpeg_decompress_struct) (dest *rgb.Image, err error) {
 	C.jpeg_calc_output_dimensions_fn(dinfo)
 	dest = rgb.NewImage(image.Rect(0, 0, int(dinfo.output_width), int(dinfo.output_height)))
@@ -516,6 +515,7 @@ func DecodeConfig(r io.Reader) (config image.Config, err error) {
 	}
 	return
 }
+
 func setupDecoderOptions(dinfo *C.struct_jpeg_decompress_struct, opt *DecoderOptions) {
 	tw, th := opt.ScaleTarget.Dx(), opt.ScaleTarget.Dy()
 	if tw > 0 && th > 0 {
