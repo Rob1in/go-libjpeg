@@ -111,15 +111,8 @@ func TestDecodeScaled(t *testing.T) {
 
 		img, err := jpeg.Decode(io, &jpeg.DecoderOptions{ScaleTarget: image.Rect(0, 0, 100, 100)})
 		test.That(t, err, test.ShouldBeNil)
-		if err != nil {
-			t.Errorf("Got Error: %v", err)
-		}
-		if got := img.Bounds().Dx(); got != 256 {
-			t.Errorf("Wrong scaled width: %v, expect: 128 (=1024/8)", got)
-		}
-		if got := img.Bounds().Dy(); got != 192 {
-			t.Errorf("Wrong scaled height: %v, expect: 192 (=768/8)", got)
-		}
+		test.That(t, img.Bounds().Dx(), test.ShouldEqual, 256)
+		test.That(t, img.Bounds().Dy(), test.ShouldEqual, 192)
 
 		util.WritePNG(img, fmt.Sprintf("TestDecodeScaled_%s.png", file))
 	}
