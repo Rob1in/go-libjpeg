@@ -1,41 +1,41 @@
 package main
 
 import (
-	"flag"
+	"bytes"
+	"fmt"
+	"github.com/viam-labs/go-libjpeg/jpeg"
 	"image"
+	"image/png"
 	"log"
 	"os"
-
-	"github.com/viam-labs/go-libjpeg/jpeg"
+	"path/filepath"
 )
 
-func main() {
-	flag.Parse()
-	file := flag.Arg(0)
-
-	io, err := os.Open(file)
+func pngToImage(path string) image.Image {
+	openBytes, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalln("Can't open file: ", file)
+		panic(err.Error())
 	}
+	img, err := png.Decode(bytes.NewReader(openBytes))
+	if err != nil {
+		panic(err.Error())
+	}
+	return img
+}
 
-	img, err := jpeg.Decode(io, &jpeg.DecoderOptions{})
+func main() {
+	img := pngToImage("/Users/robinin/fork/go-libjpeg/example/decoder/data/landscape.png")
+	fmt.Println("tout va bien")
 	if img == nil {
 		log.Fatalln("Got nil")
 	}
+	img.ColorModel()
+	//bf := new(bytes.Buffer)
+	f, err := os.Create(filepath.Clean("/Users/robinin/fork/go-libjpeg/example/decoder/data/encoded_normal2.jpeg"))
+	err = jpeg.Encode(f, img, &jpeg.EncoderOptions{Quality: 2})
 	if err != nil {
 		log.Fatalf("Got Error: %v", err)
 	}
-
-	//
-	// write your code here ...
-	//
-
-	switch img.(type) {
-	case *image.YCbCr:
-		log.Println("decoded YCbCr")
-	case *image.Gray:
-		log.Println("decoded Gray")
-	default:
-		log.Println("unknown format")
-	}
+	fmt.Println(img.Bounds().Dx())
+	fmt.Println(img.Bounds().Dy())
 }
