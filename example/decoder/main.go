@@ -24,14 +24,14 @@ func pngToImage(path string) image.Image {
 }
 
 func main() {
-	img := pngToImage("/Users/robinin/fork/go-libjpeg/example/decoder/data/landscape.png")
+	img := pngToImage("./data/landscape.png")
 	fmt.Println("tout va bien")
 	if img == nil {
 		log.Fatalln("Got nil")
 	}
 	img.ColorModel()
 	//bf := new(bytes.Buffer)
-	f, err := os.Create(filepath.Clean("/Users/robinin/fork/go-libjpeg/example/decoder/data/encoded_normal2.jpeg"))
+	f, err := os.Create(filepath.Clean("./data/encoded_normal2.jpeg"))
 	err = jpeg.Encode(f, img, &jpeg.EncoderOptions{Quality: 2})
 	if err != nil {
 		log.Fatalf("Got Error: %v", err)
