@@ -1,6 +1,11 @@
 //go:build !dynamic
-
 package jpeg
+
+/*
+Note the contents of include/ are extracted from jpeg-turbo 2.1.5.1.
+Contents of lib/ have been built from that source as well.
+Libraries are actually copies of libturbojpeg.a as built for each architecture.
+*/
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/include
