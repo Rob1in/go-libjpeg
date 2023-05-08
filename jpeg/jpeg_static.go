@@ -1,4 +1,5 @@
 //go:build !dynamic
+
 package jpeg
 
 /*
@@ -8,10 +9,13 @@ Libraries are actually copies of libturbojpeg.a as built for each architecture.
 */
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/include
-#cgo linux,amd64 LDFLAGS: ${SRCDIR}/lib/libjpeg_linux_amd64.a
-#cgo linux,arm64 LDFLAGS: ${SRCDIR}/lib/libjpeg_linux_arm64.a
-#cgo darwin,amd64 LDFLAGS: ${SRCDIR}/lib/libjpeg_darwin_amd64.a
-#cgo darwin,arm64 LDFLAGS: ${SRCDIR}/lib/libjpeg_darwin_arm64.a
+#cgo linux, darwin CFLAGS: -I${SRCDIR}/include
+#cgo windows CFLAGS: -I${SRCDIR}/include/include_windows
+
+#cgo linux,amd64 LDFLAGS: ${SRCDIR}/lib/libturbojpeg_linux_amd64.a
+#cgo linux,arm64 LDFLAGS: ${SRCDIR}/lib/libturbojpeg_linux_arm64.a
+#cgo darwin,amd64 LDFLAGS: ${SRCDIR}/lib/libturbojpeg_darwin_amd64.a
+#cgo darwin,arm64 LDFLAGS: ${SRCDIR}/lib/libturbojpeg_darwin_arm64.a
+#cgo windows LDFLAGS: ${SRCDIR}/lib/libturbojpeg_windows.a
 */
 import "C"
