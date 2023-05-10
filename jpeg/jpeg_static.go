@@ -9,7 +9,7 @@ Libraries are actually copies of libturbojpeg.a as built for each architecture.
 */
 
 /*
-#cgo linux, darwin CFLAGS: -I${SRCDIR}/include
+#cgo linux,darwin CFLAGS: -I${SRCDIR}/include
 #cgo windows CFLAGS: -I${SRCDIR}/include/include_windows
 
 #cgo linux,amd64 LDFLAGS: ${SRCDIR}/lib/libturbojpeg_linux_amd64.a
